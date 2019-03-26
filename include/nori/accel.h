@@ -22,52 +22,90 @@
 
 NORI_NAMESPACE_BEGIN
 
+class Octree
+{
+	struct Node
+	{
+		Node(const BoundingBox3f* bbox, std::vector<uint32_t>* indicies, uint32_t depth)
+			: m_bbox(bbox), m_indicies(indicies), m_childs(nullptr), m_depth(depth)
+		{
+		}
+
+		~Node()
+		{
+			delete m_bbox;
+			delete m_indicies;
+			delete m_childs;
+		}
+
+		void generate_node(Mesh* mesh);
+
+		const BoundingBox3f*	m_bbox;
+		std::vector<uint32_t>*	m_indicies;
+		std::vector<Node*>*		m_childs;
+		uint32_t				m_depth;
+
+		void search_node(const Ray3f& ray, Mesh* m_mesh, uint32_t& index, float& min_t);
+		bool is_leaf() { return m_childs == nullptr; };
+	};
+
+public:
+	Octree(Mesh* mesh);
+	bool search_tree(const Ray3f& ray, uint32_t& index);
+
+private:
+	Node* m_root;
+	Mesh* m_mesh;
+};
+
 /**
  * \brief Acceleration data structure for ray intersection queries
  *
  * The current implementation falls back to a brute force loop
  * through the geometry.
  */
-class Accel {
+class Accel
+{
 public:
-    /**
-     * \brief Register a triangle mesh for inclusion in the acceleration
-     * data structure
-     *
-     * This function can only be used before \ref build() is called
-     */
-    void addMesh(Mesh *mesh);
+	/**
+	 * \brief Register a triangle mesh for inclusion in the acceleration
+	 * data structure
+	 *
+	 * This function can only be used before \ref build() is called
+	 */
+	void addMesh(Mesh *mesh);
 
-    /// Build the acceleration data structure (currently a no-op)
-    void build();
+	/// Build the acceleration data structure (currently a no-op)
+	void build();
 
-    /// Return an axis-aligned box that bounds the scene
-    const BoundingBox3f &getBoundingBox() const { return m_bbox; }
+	/// Return an axis-aligned box that bounds the scene
+	const BoundingBox3f &getBoundingBox() const { return m_bbox; }
 
-    /**
-     * \brief Intersect a ray against all triangles stored in the scene and
-     * return detailed intersection information
-     *
-     * \param ray
-     *    A 3-dimensional ray data structure with minimum/maximum extent
-     *    information
-     *
-     * \param its
-     *    A detailed intersection record, which will be filled by the
-     *    intersection query
-     *
-     * \param shadowRay
-     *    \c true if this is a shadow ray query, i.e. a query that only aims to
-     *    find out whether the ray is blocked or not without returning detailed
-     *    intersection information.
-     *
-     * \return \c true if an intersection was found
-     */
-    bool rayIntersect(const Ray3f &ray, Intersection &its, bool shadowRay) const;
+	/**
+	 * \brief Intersect a ray against all triangles stored in the scene and
+	 * return detailed intersection information
+	 *
+	 * \param ray
+	 *    A 3-dimensional ray data structure with minimum/maximum extent
+	 *    information
+	 *
+	 * \param its
+	 *    A detailed intersection record, which will be filled by the
+	 *    intersection query
+	 *
+	 * \param shadowRay
+	 *    \c true if this is a shadow ray query, i.e. a query that only aims to
+	 *    find out whether the ray is blocked or not without returning detailed
+	 *    intersection information.
+	 *
+	 * \return \c true if an intersection was found
+	 */
+	bool rayIntersect(const Ray3f &ray, Intersection &its, bool shadowRay) const;
 
 private:
-    Mesh         *m_mesh = nullptr; ///< Mesh (only a single one for now)
-    BoundingBox3f m_bbox;           ///< Bounding box of the entire scene
+	Mesh         *m_mesh = nullptr; ///< Mesh (only a single one for now)
+	BoundingBox3f m_bbox;           ///< Bounding box of the entire scene
+	Octree* m_octree = nullptr;
 };
 
 NORI_NAMESPACE_END
