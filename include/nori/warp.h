@@ -67,6 +67,11 @@ public:
 
     /// Probability density of \ref squareToBeckmann()
     static float squareToBeckmannPdf(const Vector3f &m, float alpha);
+
+private:
+	static inline float inverseCumulateTent(const float& v);
+
+	static inline float tent(const float& v);
 };
 
 NORI_NAMESPACE_END
